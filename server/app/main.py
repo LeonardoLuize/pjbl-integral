@@ -1,13 +1,10 @@
-from typing import Union
-
 from fastapi import FastAPI
+from app.calculator.router import router as calculator_router
 
-app = FastAPI()
+def create_app():
+    app = FastAPI()
+    app.include_router(calculator_router)
 
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
+    return app
 
-
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
+app = create_app()
