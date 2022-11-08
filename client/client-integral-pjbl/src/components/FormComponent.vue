@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
+import axios from 'axios'
 
 const state = reactive({ result: "", inputAError: false, inputNError: false })
 
@@ -16,24 +17,35 @@ function verifyValues() {
     state.inputNError = true
   }
 
-  if(state.inputNError || state.inputAError){
+  if (state.inputNError || state.inputAError) {
     return false
   }
 
   return true
 }
 
-function handleClick() {
+async function handleClick() {
   state.result = ""
   state.inputAError = false
   state.inputNError = false
 
-  if(!verifyValues()){
+  if (!verifyValues()) {
     alert("Dados inválidos")
     return
   }
-  
-  state.result = "alterado"
+
+  let body = {
+    "value_a": inputA.value,
+    "value_b": inputB.value,
+    "repeat_n": inputN.value
+  }
+
+  let res = await axios.post("http://127.0.0.1:8000/api/calculate", body)
+
+  if(res.status == 200)
+    state.result = res.data.value
+  else
+    alert("Houve um erro no request :/")
 }
 
 </script>
@@ -43,19 +55,19 @@ function handleClick() {
     <section>
       <label for="a-interval">Intervalo A: </label>
       <input v-model="inputA" id="a-interval" type="number" />
-      <span class="error-msg" :class="{'d-none': !state.inputAError}">A deve ser maior ou igual a B</span>
+      <span class="error-msg" :class="{ 'd-none': !state.inputAError }">A deve ser maior ou igual a B</span>
     </section>
 
     <section>
       <label for="b-interval">Intervalo B: </label>
       <input v-model="inputB" id="b-interval" type="number" />
-      <span class="error-msg" :class="{'d-none': !state.inputAError}">B deve ser menor ou igual a A</span>
+      <span class="error-msg" :class="{ 'd-none': !state.inputAError }">B deve ser menor ou igual a A</span>
     </section>
 
     <section>
       <label for="n-repetitions">Repetições N: </label>
       <input v-model="inputN" id="n-repetitions" type="number" />
-      <span class="error-msg" :class="{'d-none': !state.inputNError}">N deve ser maior que 0</span>
+      <span class="error-msg" :class="{ 'd-none': !state.inputNError }">N deve ser maior que 0</span>
     </section>
 
     <button @click="handleClick()">Calcular</button>
