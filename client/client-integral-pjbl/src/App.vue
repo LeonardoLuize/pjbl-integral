@@ -7,7 +7,7 @@ import FormComponent from './components/FormComponent.vue'
     <div>
       <h1 class="title"><strong>integral</strong>.pjbl</h1>
     </div>
-    <FormComponent msg="Vite + Vue" />
+    <FormComponent />
   </div>
 </template>
 
@@ -23,7 +23,7 @@ import FormComponent from './components/FormComponent.vue'
   justify-content: center;
   flex-direction: column;
 
-  background: var(--background-color);
+  background: var(--surface-color);
 }
 
 .title {
