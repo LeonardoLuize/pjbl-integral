@@ -10,4 +10,7 @@ run:
 	python -m uvicorn app.main:app --host=0.0.0.0 --port=80 --reload
 
 run-dev:
-	./venv/Scripts/python -m uvicorn app.main:app --reload
+	./venv/Scripts/python -m uvicorn app.main:app --port=8000 --reload
+	./venv/Scripts/python -m uvicorn app.main:app --port=8001 --reload
+	./venv/Scripts/python -m uvicorn app.main:app --port=8002 --reload
+	./venv/Scripts/python -m uvicorn app.main:app --port=8003 --reload

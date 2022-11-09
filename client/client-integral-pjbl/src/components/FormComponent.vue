@@ -40,6 +40,27 @@ async function handleClick() {
     "repeat_n": inputN.value
   }
 
+  let diferrence = inputA.value - inputB.value
+  let interval = diferrence / 4
+  let intervals = []
+  let count = 0
+  let newInterval = []
+
+  for(let i = 0; i < diferrence; i++){
+
+    newInterval.push(i)
+
+    if(count == (interval - 1)){
+      count = 0
+      intervals.push(newInterval)
+      newInterval = []
+      continue
+    }
+    count++
+  }
+
+  console.log(intervals)
+
   let res = await axios.post("http://127.0.0.1:8000/api/calculate", body)
 
   if(res.status == 200)
