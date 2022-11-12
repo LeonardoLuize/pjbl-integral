@@ -40,17 +40,17 @@ async function handleClick() {
     "repeat_n": inputN.value
   }
 
-  let diferrence = inputA.value - inputB.value
-  let interval = diferrence / 4
+  let difference = inputA.value - inputB.value
+  let decimal = difference - Math.floor(difference)
+  let interval = Math.ceil(difference / 4)
   let intervals = []
   let count = 0
   let newInterval = []
 
-  for(let i = 0; i < diferrence; i++){
-
+  for (let i = 0; i < difference; i++) {
     newInterval.push(i)
 
-    if(count == (interval - 1)){
+    if (count == (interval - 1)) {
       count = 0
       intervals.push(newInterval)
       newInterval = []
@@ -59,11 +59,13 @@ async function handleClick() {
     count++
   }
 
-  console.log(intervals)
+  intervals[intervals.length][intervals[intervals.length].length] = intervals[intervals.length][intervals[intervals.length].length] + decimal
+
+  console.log({ intervals, interval, difference, original: difference / 4, decimal })
 
   let res = await axios.post("http://127.0.0.1:8000/api/calculate", body)
 
-  if(res.status == 200)
+  if (res.status == 200)
     state.result = res.data.value
   else
     alert("Houve um erro no request :/")
@@ -75,13 +77,13 @@ async function handleClick() {
   <form @submit.prevent="" class="form-container">
     <section>
       <label for="a-interval">Intervalo A: </label>
-      <input v-model="inputA" id="a-interval" type="number" />
+      <input v-model="inputA" id="a-interval" />
       <span class="error-msg" :class="{ 'd-none': !state.inputAError }">A deve ser maior ou igual a B</span>
     </section>
 
     <section>
       <label for="b-interval">Intervalo B: </label>
-      <input v-model="inputB" id="b-interval" type="number" />
+      <input v-model="inputB" id="b-interval" />
       <span class="error-msg" :class="{ 'd-none': !state.inputAError }">B deve ser menor ou igual a A</span>
     </section>
 
