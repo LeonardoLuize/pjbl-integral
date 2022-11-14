@@ -2,14 +2,28 @@
 import { reactive, ref } from 'vue'
 import axios from 'axios'
 
+type Payload = {
+  value_a: number
+  value_b: number
+  repeat_n: number
+}
 const state = reactive({ result: "", inputAError: false, inputNError: false })
 
 const inputA = ref(0)
 const inputB = ref(0)
 const inputN = ref(0)
 
+const baseUrls = [
+  "http://127.0.0.1:8000",
+  "http://127.0.0.1:8001",
+  "http://127.0.0.1:8002",
+  "http://127.0.0.1:8003",
+]
+
 function verifyValues() {
-  if (inputA.value < inputB.value) {
+  console.log("A:" + Number(inputA.value))
+  console.log("B:" + Number(inputB.value))
+  if (Number(inputA.value) < Number(inputB.value)) {
     state.inputAError = true
   }
 
@@ -24,7 +38,43 @@ function verifyValues() {
   return true
 }
 
-async function handleClick() {
+async function calculateInterval(baseURL: String, body: Payload) {
+  let res = await axios.post(`${baseURL}/api/calculate`, body)
+
+  if (res.status == 200)
+    return res.data.value
+  else
+    alert("Houve um erro no request :/")
+}
+
+function getIntervalsArray() {
+  let difference = inputA.value - inputB.value
+  let decimal = difference - Math.floor(difference)
+  let interval = Math.ceil(difference / 4)
+  let intervals = []
+  let count = 0
+  let newInterval = []
+
+  for (let i = 0; i < difference; i++) {
+    newInterval.push(i)
+
+    if (count == (interval - 1)) {
+      count = 0
+      intervals.push(newInterval)
+      newInterval = []
+      continue
+    }
+    count++
+  }
+
+  let lastIntervalGroup = intervals.length - 1
+  let lastInterval = intervals[lastIntervalGroup].length - 1
+  intervals[lastIntervalGroup][lastInterval] = Math.round((intervals[lastIntervalGroup][lastInterval] + decimal) * 10) / 10
+
+  return intervals
+}
+
+function handleClick() {
   state.result = ""
   state.inputAError = false
   state.inputNError = false
@@ -34,18 +84,28 @@ async function handleClick() {
     return
   }
 
-  let body = {
-    "value_a": inputA.value,
-    "value_b": inputB.value,
-    "repeat_n": inputN.value
+  let intervalsArray = getIntervalsArray()
+  console.log(intervalsArray)
+
+  let promises:Array<Promise<any>> = []
+
+  for (let interval of intervalsArray) {
+    promises.push(calculateInterval(baseUrls[0] ,{
+      "value_a": interval.length > 1 ? interval[0] : 0,
+      "value_b": interval.length > 1 ? interval[1] : interval[0],
+      "repeat_n": inputN.value
+    }))    
   }
 
-  let res = await axios.post("http://127.0.0.1:8000/api/calculate", body)
+  Promise.all(promises).then(values => {
+    console.log(values)
+    
+    let total = values.reduce((previous, current) => {
+      return previous + current
+    }, 0)
 
-  if(res.status == 200)
-    state.result = res.data.value
-  else
-    alert("Houve um erro no request :/")
+    state.result = String(total)
+  })
 }
 
 </script>
@@ -54,13 +114,13 @@ async function handleClick() {
   <form @submit.prevent="" class="form-container">
     <section>
       <label for="a-interval">Intervalo A: </label>
-      <input v-model="inputA" id="a-interval" type="number" />
+      <input v-model="inputA" id="a-interval" />
       <span class="error-msg" :class="{ 'd-none': !state.inputAError }">A deve ser maior ou igual a B</span>
     </section>
 
     <section>
       <label for="b-interval">Intervalo B: </label>
-      <input v-model="inputB" id="b-interval" type="number" />
+      <input v-model="inputB" id="b-interval" />
       <span class="error-msg" :class="{ 'd-none': !state.inputAError }">B deve ser menor ou igual a A</span>
     </section>
 
