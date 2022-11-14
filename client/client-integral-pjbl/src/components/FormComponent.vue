@@ -2,11 +2,23 @@
 import { reactive, ref } from 'vue'
 import axios from 'axios'
 
+type Payload = {
+  value_a: number
+  value_b: number
+  repeat_n: number
+}
 const state = reactive({ result: "", inputAError: false, inputNError: false })
 
 const inputA = ref(0)
 const inputB = ref(0)
 const inputN = ref(0)
+
+const baseUrls = [
+  "http://127.0.0.1:8000",
+  "http://127.0.0.1:8001",
+  "http://127.0.0.1:8002",
+  "http://127.0.0.1:8003",
+]
 
 function verifyValues() {
   if (inputA.value < inputB.value) {
@@ -24,22 +36,16 @@ function verifyValues() {
   return true
 }
 
-async function handleClick() {
-  state.result = ""
-  state.inputAError = false
-  state.inputNError = false
+async function calculateInterval(body: Payload) {
+  let res = await axios.post("http://127.0.0.1:8000/api/calculate", body)
 
-  if (!verifyValues()) {
-    alert("Dados inválidos")
-    return
-  }
+  if (res.status == 200)
+    return res.data.value
+  else
+    alert("Houve um erro no request :/")
+}
 
-  let body = {
-    "value_a": inputA.value,
-    "value_b": inputB.value,
-    "repeat_n": inputN.value
-  }
-
+function getIntervalsArray() {
   let difference = inputA.value - inputB.value
   let decimal = difference - Math.floor(difference)
   let interval = Math.ceil(difference / 4)
@@ -59,16 +65,48 @@ async function handleClick() {
     count++
   }
 
-  intervals[intervals.length][intervals[intervals.length].length] = intervals[intervals.length][intervals[intervals.length].length] + decimal
+  let lastIntervalGroup = intervals.length - 1
+  let lastInterval = intervals[lastIntervalGroup].length - 1
+  intervals[lastIntervalGroup][lastInterval] = Math.round((intervals[lastIntervalGroup][lastInterval] + decimal) * 10) / 10
 
-  console.log({ intervals, interval, difference, original: difference / 4, decimal })
+  return intervals
+}
 
-  let res = await axios.post("http://127.0.0.1:8000/api/calculate", body)
+async function handleClick() {
+  state.result = ""
+  state.inputAError = false
+  state.inputNError = false
 
-  if (res.status == 200)
-    state.result = res.data.value
-  else
-    alert("Houve um erro no request :/")
+  if (!verifyValues()) {
+    alert("Dados inválidos")
+    return
+  }
+
+  let body = {
+    "value_a": inputA.value,
+    "value_b": inputB.value,
+    "repeat_n": inputN.value
+  }
+
+  let intervalsArray = getIntervalsArray()
+  console.log(intervalsArray)
+
+  let totalCalc = 0
+
+  for (let interval of intervalsArray) {
+    let result = await calculateInterval({
+      "value_a": interval.length === 1 ? interval[0] : 0,
+      "value_b": interval.length === 1 ? interval[1] : interval[0],
+      "repeat_n": inputN.value
+    })
+
+    totalCalc += result
+
+    console.log("\nresult: " + result)
+    console.log("totalCalc: " + totalCalc)
+  }
+
+  state.result = String(totalCalc)
 }
 
 </script>
