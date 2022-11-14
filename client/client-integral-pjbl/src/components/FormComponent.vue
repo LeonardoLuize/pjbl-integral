@@ -21,7 +21,9 @@ const baseUrls = [
 ]
 
 function verifyValues() {
-  if (inputA.value < inputB.value) {
+  console.log("A:" + Number(inputA.value))
+  console.log("B:" + Number(inputB.value))
+  if (Number(inputA.value) < Number(inputB.value)) {
     state.inputAError = true
   }
 
@@ -36,8 +38,8 @@ function verifyValues() {
   return true
 }
 
-async function calculateInterval(body: Payload) {
-  let res = await axios.post("http://127.0.0.1:8000/api/calculate", body)
+async function calculateInterval(baseURL: String, body: Payload) {
+  let res = await axios.post(`${baseURL}/api/calculate`, body)
 
   if (res.status == 200)
     return res.data.value
@@ -72,7 +74,7 @@ function getIntervalsArray() {
   return intervals
 }
 
-async function handleClick() {
+function handleClick() {
   state.result = ""
   state.inputAError = false
   state.inputNError = false
@@ -82,31 +84,28 @@ async function handleClick() {
     return
   }
 
-  let body = {
-    "value_a": inputA.value,
-    "value_b": inputB.value,
-    "repeat_n": inputN.value
-  }
-
   let intervalsArray = getIntervalsArray()
   console.log(intervalsArray)
 
-  let totalCalc = 0
+  let promises:Array<Promise<any>> = []
 
   for (let interval of intervalsArray) {
-    let result = await calculateInterval({
-      "value_a": interval.length === 1 ? interval[0] : 0,
-      "value_b": interval.length === 1 ? interval[1] : interval[0],
+    promises.push(calculateInterval(baseUrls[0] ,{
+      "value_a": interval.length > 1 ? interval[0] : 0,
+      "value_b": interval.length > 1 ? interval[1] : interval[0],
       "repeat_n": inputN.value
-    })
-
-    totalCalc += result
-
-    console.log("\nresult: " + result)
-    console.log("totalCalc: " + totalCalc)
+    }))    
   }
 
-  state.result = String(totalCalc)
+  Promise.all(promises).then(values => {
+    console.log(values)
+    
+    let total = values.reduce((previous, current) => {
+      return previous + current
+    }, 0)
+
+    state.result = String(total)
+  })
 }
 
 </script>
