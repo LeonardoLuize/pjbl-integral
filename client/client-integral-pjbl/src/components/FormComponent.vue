@@ -7,7 +7,7 @@ type Payload = {
   value_b: number
   repeat_n: number
 }
-const state = reactive({ result: "", inputAError: false, inputNError: false })
+const state = reactive({ result: "", inputAError: false, inputNError: false, isLoading: false })
 
 const inputA = ref(0)
 const inputB = ref(0)
@@ -23,7 +23,7 @@ const baseUrls = [
 function verifyValues() {
   console.log("A:" + Number(inputA.value))
   console.log("B:" + Number(inputB.value))
-  if (Number(inputA.value) < Number(inputB.value)) {
+  if (Number(inputA.value) > Number(inputB.value)) {
     state.inputAError = true
   }
 
@@ -48,24 +48,17 @@ async function calculateInterval(baseURL: String, body: Payload) {
 }
 
 function getIntervalsArray() {
-  let difference = inputA.value - inputB.value
+  let difference = inputB.value - inputA.value
   let decimal = difference - Math.floor(difference)
   let interval = Math.ceil(difference / 4)
   let intervals = []
-  let count = 0
-  let newInterval = []
 
-  for (let i = 0; i < difference; i++) {
-    newInterval.push(i)
-
-    if (count == (interval - 1)) {
-      count = 0
-      intervals.push(newInterval)
-      newInterval = []
-      continue
-    }
-    count++
-  }
+  intervals = [
+    [0, interval],
+    [interval, interval * 2],
+    [interval * 2, interval * 3],
+    [interval * 3, interval * 4],
+  ]
 
   let lastIntervalGroup = intervals.length - 1
   let lastInterval = intervals[lastIntervalGroup].length - 1
@@ -75,11 +68,13 @@ function getIntervalsArray() {
 }
 
 function handleClick() {
+  state.isLoading = true
   state.result = ""
   state.inputAError = false
   state.inputNError = false
 
   if (!verifyValues()) {
+    state.isLoading = false
     alert("Dados inválidos")
     return
   }
@@ -89,12 +84,20 @@ function handleClick() {
 
   let promises:Array<Promise<any>> = []
 
+  let index = 0
   for (let interval of intervalsArray) {
-    promises.push(calculateInterval(baseUrls[0] ,{
+    promises.push(calculateInterval(baseUrls[index] ,{
       "value_a": interval.length > 1 ? interval[0] : 0,
       "value_b": interval.length > 1 ? interval[1] : interval[0],
       "repeat_n": inputN.value
     }))    
+
+    if(index > 3){
+      index = 0
+      continue
+    }
+
+    index++
   }
 
   Promise.all(promises).then(values => {
@@ -105,6 +108,7 @@ function handleClick() {
     }, 0)
 
     state.result = String(total)
+    state.isLoading = false
   })
 }
 
@@ -115,13 +119,13 @@ function handleClick() {
     <section>
       <label for="a-interval">Intervalo A: </label>
       <input v-model="inputA" id="a-interval" />
-      <span class="error-msg" :class="{ 'd-none': !state.inputAError }">A deve ser maior ou igual a B</span>
+      <span class="error-msg" :class="{ 'd-none': !state.inputAError }">A deve ser menor ou igual a B</span>
     </section>
 
     <section>
       <label for="b-interval">Intervalo B: </label>
       <input v-model="inputB" id="b-interval" />
-      <span class="error-msg" :class="{ 'd-none': !state.inputAError }">B deve ser menor ou igual a A</span>
+      <span class="error-msg" :class="{ 'd-none': !state.inputAError }">B deve ser maior ou igual a A</span>
     </section>
 
     <section>
@@ -130,7 +134,10 @@ function handleClick() {
       <span class="error-msg" :class="{ 'd-none': !state.inputNError }">N deve ser maior que 0</span>
     </section>
 
-    <button @click="handleClick()">Calcular</button>
+    <button @click="handleClick()">
+      <div class="loader" v-if="state.isLoading"></div>
+      <p  v-if="!state.isLoading">Calcular</p>
+    </button>
   </form>
 
   <div v-if="state.result !== ''" class="result-container">
@@ -189,6 +196,10 @@ function handleClick() {
   width: 100%;
   cursor: pointer;
   transition: all .2s;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .form-container button:hover {
@@ -207,5 +218,18 @@ function handleClick() {
 
 .result-container p {
   font-size: 18px;
+}
+.loader {
+  border: 4px solid #ececec; 
+  border-top: 4px solid #50505f; 
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>
