@@ -48,6 +48,8 @@ python3 -m venv venv
 
 # Baixa dependencias
 ./venv/bin/pip install -r requirements.txt
+./venv/bin/pip install fastapi
+./venv/bin/pip install "uvicorn[standard]"
 
 # Executa o servidor, importante rodar o mesmo comando paras portas 8001, 8002 e 8003.
 ./venv/bin/python -m uvicorn app.main:app --port=8000 --reload
